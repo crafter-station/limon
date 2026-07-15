@@ -1,5 +1,6 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, spyOn, test } from "bun:test";
 import {
+  importRestaurant,
   mapApifyRestaurant,
   type Restaurant,
   restaurantSlug,
@@ -64,6 +65,89 @@ describe("mapApifyRestaurant", () => {
 
     expect(restaurant.description).toContain("Las Palmeras");
     expect(restaurant.photos).toEqual([]);
+  });
+});
+
+describe("importRestaurant", () => {
+  test("sends the public Maps place URL to Apify instead of the preview URL", async () => {
+    const mapsUrl = "https://www.google.com/maps/place/Las+Palmeras";
+    const previewUrl =
+      "https://www.google.com/maps/preview/place/Las+Palmeras?pb=test";
+    const place = new Array(228);
+    place[4] = new Array(9);
+    place[4][7] = 4;
+    place[4][8] = 60;
+    place[9] = [null, null, -6.05, -77.17];
+    place[11] = "Las Palmeras";
+    place[13] = ["Restaurante"];
+    place[18] = "Rioja, Peru";
+    place[42] = previewUrl;
+    const previewPayload = new Array(7);
+    previewPayload[6] = place;
+    const originalToken = process.env.APIFY_PERSONAL_API_TOKEN;
+    const originalApiKey = process.env.GOOGLE_MAPS_API_KEY;
+    process.env.APIFY_PERSONAL_API_TOKEN = "test-token";
+    delete process.env.GOOGLE_MAPS_API_KEY;
+
+    const fetchMock = async (
+      input: Parameters<typeof fetch>[0],
+      init?: Parameters<typeof fetch>[1],
+    ) => {
+      const url = new URL(
+        input instanceof Request ? input.url : input.toString(),
+      );
+
+      if (url.hostname === "api.apify.com") {
+        const body = JSON.parse(String(init?.body)) as {
+          startUrls: { url: string }[];
+        };
+        if (body.startUrls[0]?.url.includes("/maps/preview/")) {
+          return new Response("Invalid Google Maps URL", { status: 400 });
+        }
+        return Response.json([
+          {
+            title: "Las Palmeras",
+            reviewsCount: 60,
+            reviews: [
+              {
+                name: "Maria",
+                stars: 5,
+                text: "Excelente ceviche",
+              },
+            ],
+          },
+        ]);
+      }
+
+      if (url.pathname.startsWith("/maps/preview/place")) {
+        return new Response(`)]}'\n${JSON.stringify(previewPayload)}`);
+      }
+
+      return new Response('<a href="/maps/preview/place?pb=test">details</a>');
+    };
+    const fetchSpy = spyOn(globalThis, "fetch").mockImplementation(
+      fetchMock as typeof fetch,
+    );
+
+    try {
+      const restaurant = await importRestaurant(mapsUrl);
+
+      expect(restaurant.importedWith).toBe("apify");
+      expect(restaurant.reviews).toHaveLength(1);
+      expect(restaurant.reviews[0]?.text).toBe("Excelente ceviche");
+    } finally {
+      fetchSpy.mockRestore();
+      if (originalToken === undefined) {
+        delete process.env.APIFY_PERSONAL_API_TOKEN;
+      } else {
+        process.env.APIFY_PERSONAL_API_TOKEN = originalToken;
+      }
+      if (originalApiKey === undefined) {
+        delete process.env.GOOGLE_MAPS_API_KEY;
+      } else {
+        process.env.GOOGLE_MAPS_API_KEY = originalApiKey;
+      }
+    }
   });
 });
 

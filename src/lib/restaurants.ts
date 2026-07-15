@@ -495,6 +495,7 @@ export function mapApifyRestaurant(
 async function enrichWithApify(
   scraped: Restaurant,
   token: string,
+  sourceUrl: string,
 ): Promise<Restaurant> {
   const response = await fetch(
     "https://api.apify.com/v2/actors/compass~crawler-google-places/run-sync-get-dataset-items?clean=true&maxTotalChargeUsd=0.5&timeout=180",
@@ -506,7 +507,7 @@ async function enrichWithApify(
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        startUrls: [{ url: scraped.googleMapsUrl }],
+        startUrls: [{ url: sourceUrl }],
         language: "es",
         scrapePlaceDetailPage: true,
         maxReviews: 5,
@@ -692,7 +693,7 @@ export const importRestaurant = cache(async (mapsUrl: string) => {
 
   if (apifyToken) {
     try {
-      return await enrichWithApify(scraped, apifyToken);
+      return await enrichWithApify(scraped, apifyToken, mapsUrl);
     } catch {
       // The official Places API and preview payload remain degraded fallbacks.
     }
