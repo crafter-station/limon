@@ -17,15 +17,23 @@ CREATE TABLE IF NOT EXISTS restaurants (
   CHECK (status <> 'ready' OR (slug IS NOT NULL AND data IS NOT NULL))
 );
 
+-- migrate:split
+
 CREATE INDEX IF NOT EXISTS restaurants_status_idx ON restaurants (status);
+-- migrate:split
 CREATE INDEX IF NOT EXISTS restaurants_place_id_idx ON restaurants (place_id);
 
+-- migrate:split
 ALTER TABLE restaurants ADD COLUMN IF NOT EXISTS provider_data JSONB;
+-- migrate:split
 ALTER TABLE restaurants ADD COLUMN IF NOT EXISTS lease_token UUID;
+-- migrate:split
 ALTER TABLE restaurants ADD COLUMN IF NOT EXISTS lease_started_at TIMESTAMPTZ;
+-- migrate:split
 ALTER TABLE restaurants
   ADD COLUMN IF NOT EXISTS generation_attempts INTEGER NOT NULL DEFAULT 0;
 
+-- migrate:split
 CREATE TABLE IF NOT EXISTS generation_rate_limits (
   requester_key TEXT NOT NULL,
   window_started_at TIMESTAMPTZ NOT NULL,

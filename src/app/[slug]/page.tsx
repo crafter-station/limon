@@ -3,6 +3,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getRestaurantBySlug } from "@/lib/database";
+import { getPublishedMenu } from "@/lib/menu-database";
+import type { MenuPrice, MenuVariant } from "@/lib/menus";
 import type { Restaurant } from "@/lib/restaurants";
 
 export async function generateMetadata({
@@ -41,6 +43,24 @@ function StarRating({ rating = 0 }: { rating?: number }) {
       ))}
     </span>
   );
+}
+
+function displayPrice(price: MenuPrice | MenuVariant) {
+  if (
+    price.amountMinorUnits === null ||
+    !price.currency ||
+    price.amount === null
+  ) {
+    return null;
+  }
+  try {
+    return new Intl.NumberFormat("es-PE", {
+      style: "currency",
+      currency: price.currency,
+    }).format(Number(price.amount));
+  } catch {
+    return `${price.currency} ${price.amount}`;
+  }
 }
 
 function PhotoGrid({ restaurant }: { restaurant: Restaurant }) {
@@ -106,6 +126,7 @@ export default async function RestaurantPage({
   const record = await getRestaurantBySlug(slug);
   if (!record?.data) notFound();
   const restaurant = record.data;
+  const menu = await getPublishedMenu(record.id);
 
   const directionsUrl = restaurant.googleMapsUrl;
   const telUrl = restaurant.phone
@@ -130,6 +151,11 @@ export default async function RestaurantPage({
             >
               Nosotros
             </a>
+            {menu ? (
+              <a className="hidden hover:text-[#d7ef58] sm:block" href="#menu">
+                Menu
+              </a>
+            ) : null}
             <a
               className="hidden hover:text-[#d7ef58] sm:block"
               href="#visitanos"
@@ -226,6 +252,81 @@ export default async function RestaurantPage({
           </div>
         </div>
       </section>
+
+      {menu ? (
+        <section
+          className="border-y border-[#17231a]/15 bg-[#fffaf0] px-5 py-20 sm:px-8 md:py-28"
+          id="menu"
+        >
+          <div className="mx-auto max-w-7xl">
+            <div className="grid gap-8 md:grid-cols-[0.72fr_1.28fr]">
+              <div>
+                <p className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-[#c34d31]">
+                  Menu aprobado
+                </p>
+                <h2 className="font-display mt-5 text-6xl leading-none sm:text-8xl">
+                  Para la mesa.
+                </h2>
+                <p className="mt-5 max-w-sm text-sm leading-6 text-[#657067]">
+                  Publicado por un representante verificado del restaurante.
+                </p>
+              </div>
+              <div className="grid gap-12">
+                {menu.sections.map((section, sectionIndex) => (
+                  <article key={`${section.name}-${sectionIndex}`}>
+                    <div className="flex items-center gap-4">
+                      <h3 className="font-display text-4xl sm:text-5xl">
+                        {section.name}
+                      </h3>
+                      <span className="h-px flex-1 bg-[#17231a]/20" />
+                    </div>
+                    <div className="mt-6 divide-y divide-[#17231a]/12">
+                      {section.items.map((item, itemIndex) => (
+                        <div
+                          className="grid gap-3 py-5 sm:grid-cols-[1fr_auto] sm:gap-8"
+                          key={`${item.name}-${itemIndex}`}
+                        >
+                          <div>
+                            <h4 className="text-lg font-bold">{item.name}</h4>
+                            {item.description ? (
+                              <p className="mt-1 max-w-2xl leading-6 text-[#657067]">
+                                {item.description}
+                              </p>
+                            ) : null}
+                            {item.variants.length > 0 ? (
+                              <div className="mt-3 flex flex-wrap gap-2 text-sm text-[#526057]">
+                                {item.variants.map((variant, variantIndex) => (
+                                  <span
+                                    className="rounded-full border border-[#17231a]/15 px-3 py-1"
+                                    key={`${variant.name}-${variantIndex}`}
+                                  >
+                                    {variant.name}
+                                    {displayPrice(variant)
+                                      ? ` / ${displayPrice(variant)}`
+                                      : ""}
+                                  </span>
+                                ))}
+                              </div>
+                            ) : null}
+                          </div>
+                          <div className="flex flex-wrap gap-3 font-bold sm:justify-end">
+                            {item.prices.map((price, priceIndex) => (
+                              <span key={`${price.label}-${priceIndex}`}>
+                                {price.label ? `${price.label} ` : ""}
+                                {displayPrice(price)}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+      ) : null}
 
       <section className="bg-[#17231a] px-5 py-20 text-white sm:px-8 md:py-28">
         <div className="mx-auto max-w-7xl">
