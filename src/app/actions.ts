@@ -7,10 +7,10 @@ import {
   consumeGenerationAllowance,
   createRestaurantRecord,
 } from "@/lib/database";
+import { isLimonHost, restaurantUrl } from "@/lib/domains";
 import { resolveGoogleMapsUrl } from "@/lib/restaurants";
 
-async function requesterKey() {
-  const requestHeaders = await headers();
+function requesterKey(requestHeaders: { get(name: string): string | null }) {
   const forwardedFor =
     requestHeaders.get("x-vercel-forwarded-for") ??
     requestHeaders.get("x-forwarded-for") ??
@@ -24,12 +24,15 @@ export async function generateRestaurant(formData: FormData) {
   let destination: string;
 
   try {
-    await consumeGenerationAllowance(await requesterKey());
+    const requestHeaders = await headers();
+    await consumeGenerationAllowance(requesterKey(requestHeaders));
     const sourceUrl = await resolveGoogleMapsUrl(mapsUrl);
     const restaurant = await createRestaurantRecord(sourceUrl);
     destination =
       restaurant.status === "ready" && restaurant.slug
-        ? `/${restaurant.slug}`
+        ? isLimonHost(requestHeaders.get("host"))
+          ? restaurantUrl(restaurant.slug)
+          : `/${restaurant.slug}`
         : `/generating/${restaurant.id}`;
   } catch (error) {
     const message =

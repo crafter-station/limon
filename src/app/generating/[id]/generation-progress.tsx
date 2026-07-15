@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { startTransition, useEffect, useState } from "react";
+import { isLimonHost, restaurantUrl } from "@/lib/domains";
 
 type GenerationStatus = "failed" | "generating" | "pending" | "ready";
 
@@ -88,6 +89,10 @@ export function GenerationProgress({
         }
 
         if (result.status === "ready" && result.slug) {
+          if (isLimonHost(window.location.host)) {
+            window.location.replace(restaurantUrl(result.slug));
+            return;
+          }
           startTransition(() => router.replace(`/${result.slug}`));
           return;
         }

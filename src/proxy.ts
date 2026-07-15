@@ -1,7 +1,6 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
-
-const ROOT_DOMAIN = "limon.lat";
+import { ROOT_DOMAIN } from "@/lib/domains";
 
 function restaurantSlugFromHost(host: string | null) {
   const hostname = host?.split(":", 1)[0]?.toLowerCase().replace(/\.$/, "");

@@ -13,7 +13,12 @@ The importer has three provider paths:
 
 Restaurant photos, reviewer avatars, and review images retained by the normalized
 model are copied to Vercel Blob. Neon stores the final `Restaurant` object in a
-`JSONB` column and maps it to `/{restaurant-slug}`.
+`JSONB` column. Pages remain available at `/{restaurant-slug}` for local and
+preview deployments; production uses `https://{restaurant-slug}.limon.lat`.
+
+Wildcard production routing is handled by `src/proxy.ts`. The `limon.lat` DNS
+zone must use Vercel's `ns1.vercel-dns.com` and `ns2.vercel-dns.com`
+nameservers so Vercel can issue and renew the `*.limon.lat` certificate.
 
 ## Run locally
 
