@@ -2,8 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getRestaurantBySlug } from "@/lib/database";
-import { getPublishedMenu } from "@/lib/menu-database";
+import { getPublishedMenu, getRestaurantBySlug } from "@/lib/database";
 import type { MenuPrice, MenuVariant } from "@/lib/menus";
 import type { Restaurant } from "@/lib/restaurants";
 
@@ -46,18 +45,13 @@ function StarRating({ rating = 0 }: { rating?: number }) {
 }
 
 function displayPrice(price: MenuPrice | MenuVariant) {
-  if (
-    price.amountMinorUnits === null ||
-    !price.currency ||
-    price.amount === null
-  ) {
-    return null;
-  }
+  if (!price.amount) return null;
+  if (!price.currency) return price.amount;
   try {
     return new Intl.NumberFormat("es-PE", {
       style: "currency",
       currency: price.currency,
-    }).format(Number(price.amount));
+    }).format(Number(price.amount.replace(",", ".")));
   } catch {
     return `${price.currency} ${price.amount}`;
   }
@@ -262,13 +256,13 @@ export default async function RestaurantPage({
             <div className="grid gap-8 md:grid-cols-[0.72fr_1.28fr]">
               <div>
                 <p className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-[#c34d31]">
-                  Menu aprobado
+                  Menu encontrado
                 </p>
                 <h2 className="font-display mt-5 text-6xl leading-none sm:text-8xl">
                   Para la mesa.
                 </h2>
                 <p className="mt-5 max-w-sm text-sm leading-6 text-[#657067]">
-                  Publicado por un representante verificado del restaurante.
+                  Generado a partir de las fotos publicas del restaurante.
                 </p>
               </div>
               <div className="grid gap-12">

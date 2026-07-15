@@ -498,7 +498,7 @@ async function enrichWithApify(
   sourceUrl: string,
 ): Promise<Restaurant> {
   const response = await fetch(
-    "https://api.apify.com/v2/actors/compass~crawler-google-places/run-sync-get-dataset-items?clean=true&maxTotalChargeUsd=0.5&timeout=180",
+    "https://api.apify.com/v2/actors/compass~crawler-google-places/run-sync-get-dataset-items?clean=true&maxTotalChargeUsd=0.5&timeout=120",
     {
       method: "POST",
       cache: "no-store",
@@ -520,7 +520,7 @@ async function enrichWithApify(
         scrapeContacts: false,
         maximumLeadsEnrichmentRecords: 0,
       }),
-      signal: AbortSignal.timeout(185_000),
+      signal: AbortSignal.timeout(125_000),
     },
   );
 

@@ -194,7 +194,7 @@ export function GenerationProgress({
                 Preserving photos and reviews
               </p>
               <p className="generation-step generation-step-delay-2 rounded-full border border-white/10 bg-white/[0.04] px-5 py-3 text-white/70">
-                Publishing the final page
+                Reading menu photos and publishing
               </p>
             </div>
             <p className="mt-8 text-xs text-white/35" aria-live="polite">
