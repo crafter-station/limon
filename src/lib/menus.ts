@@ -6,10 +6,7 @@ export const menuPriceSchema = z.object({
     .string()
     .regex(/^\d+(?:[.,]\d{1,2})?$/)
     .nullable(),
-  currency: z
-    .string()
-    .regex(/^[A-Z]{3}$/)
-    .nullable(),
+  currency: z.literal("PEN").nullable(),
 });
 
 export const menuVariantSchema = z.object({
@@ -19,10 +16,7 @@ export const menuVariantSchema = z.object({
     .string()
     .regex(/^\d+(?:[.,]\d{1,2})?$/)
     .nullable(),
-  currency: z
-    .string()
-    .regex(/^[A-Z]{3}$/)
-    .nullable(),
+  currency: z.literal("PEN").nullable(),
 });
 
 export const menuItemSchema = z.object({
@@ -44,3 +38,22 @@ export const generatedMenuSchema = z.object({
 export type MenuPrice = z.infer<typeof menuPriceSchema>;
 export type MenuVariant = z.infer<typeof menuVariantSchema>;
 export type GeneratedMenu = z.infer<typeof generatedMenuSchema>;
+
+export function normalizeMenuCurrency(menu: GeneratedMenu): GeneratedMenu {
+  return {
+    sections: menu.sections.map((section) => ({
+      ...section,
+      items: section.items.map((item) => ({
+        ...item,
+        prices: item.prices.map((price) => ({
+          ...price,
+          currency: price.amount ? "PEN" : null,
+        })),
+        variants: item.variants.map((variant) => ({
+          ...variant,
+          currency: variant.amount ? "PEN" : null,
+        })),
+      })),
+    })),
+  };
+}

@@ -1,7 +1,11 @@
 import "server-only";
 
 import { generateText, Output } from "ai";
-import { type GeneratedMenu, generatedMenuSchema } from "@/lib/menus";
+import {
+  type GeneratedMenu,
+  generatedMenuSchema,
+  normalizeMenuCurrency,
+} from "@/lib/menus";
 
 export const MENU_VISION_MODEL =
   process.env.MENU_VISION_MODEL || "google/gemini-2.5-flash-lite";
@@ -24,8 +28,8 @@ export async function extractMenuFromImages(
       "Extract a restaurant menu from the supplied Google Maps photos. " +
       "Ignore storefront, food-only, people, interior, and unreadable photos. " +
       "Return only text that is visibly present. Keep the original language. " +
-      "Use null when a description, amount, currency, or label is not visible. " +
-      "Amounts are decimal strings without currency symbols. Currency is an ISO-4217 code when visible or null. " +
+      "Use null when a description, amount, or label is not visible. " +
+      "This restaurant is in Peru: every visible price uses PEN. Amounts are decimal strings without currency symbols. " +
       "Do not invent menu items, ingredients, prices, or currencies.",
     messages: [
       {
@@ -47,6 +51,6 @@ export async function extractMenuFromImages(
   });
 
   return output.sections.some((section) => section.items.length > 0)
-    ? output
+    ? normalizeMenuCurrency(output)
     : undefined;
 }
