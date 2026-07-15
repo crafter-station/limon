@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f2efe4;
+  --foreground: #1d2a20;
 }
 
 @theme inline {
@@ -12,15 +12,126 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
+  margin: 0;
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+}
+
+.font-display {
+  font-family: Georgia, "Times New Roman", serif;
+  font-weight: 500;
+}
+
+.font-roboto {
+  font-family: Roboto, Arial, sans-serif;
+}
+
+.home-shell {
+  background-image:
+    radial-gradient(
+      circle at 18% 18%,
+      rgba(215, 239, 88, 0.17),
+      transparent 25%
+    ),
+    radial-gradient(
+      circle at 88% 70%,
+      rgba(255, 116, 72, 0.12),
+      transparent 24%
+    );
+}
+
+.restaurant-placeholder {
+  background-color: #263d2c;
+  background-image:
+    radial-gradient(
+      circle at 22% 24%,
+      rgba(215, 239, 88, 0.35),
+      transparent 12%
+    ),
+    radial-gradient(circle at 71% 64%, rgba(255, 116, 72, 0.5), transparent 18%),
+    linear-gradient(125deg, #17291d 0%, #42613b 45%, #19291e 100%);
+}
+
+.generation-ring {
+  box-shadow:
+    0 0 0 18px rgba(255, 255, 255, 0.025),
+    0 0 0 36px rgba(255, 255, 255, 0.015);
+}
+
+.generation-orbit {
+  animation: generation-spin 1.4s linear infinite;
+}
+
+.generation-glow {
+  animation: generation-breathe 3.2s ease-in-out infinite;
+}
+
+.generation-step {
+  animation: generation-step 3.6s ease-in-out infinite;
+}
+
+.generation-step-delay-1 {
+  animation-delay: 1.2s;
+}
+
+.generation-step-delay-2 {
+  animation-delay: 2.4s;
+}
+
+@keyframes generation-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes generation-breathe {
+  50% {
+    opacity: 0.55;
+    transform: translate(-50%, -50%) scale(1.08);
+  }
+}
+
+@keyframes generation-step {
+  0%,
+  28%,
+  100% {
+    border-color: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.7);
+    transform: translateX(0);
+  }
+
+  12% {
+    border-color: rgba(215, 239, 88, 0.55);
+    color: #d7ef58;
+    transform: translateX(0.35rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto;
+    transition-duration: 0.01ms;
+  }
+
+  .generation-glow,
+  .generation-orbit,
+  .generation-step {
+    animation: none;
+  }
 }

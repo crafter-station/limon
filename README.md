@@ -1,36 +1,77 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Limon
 
-## Getting Started
+Limon turns a Google Maps restaurant link into a generated landing page. A
+submission creates a pending Neon record, redirects to a generation screen, and
+imports the restaurant once. The completed page is then served from stored JSON;
+normal page views do not call Apify or Google Places.
 
-First, run the development server:
+The importer has three provider paths:
+
+- Apify Google Maps Scraper when `APIFY_PERSONAL_API_TOKEN` is set.
+- Optional fallback enrichment through Places API (New).
+- A final zero-configuration fallback using Google's public Maps preview payload.
+
+Restaurant photos, reviewer avatars, and review images retained by the normalized
+model are copied to Vercel Blob. Neon stores the final `Restaurant` object in a
+`JSONB` column and maps it to `/{restaurant-slug}`.
+
+## Run locally
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
+bun install
+bun run db:migrate
 bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000), paste a full Google Maps place
+URL, and submit the form.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Required services
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Set these values in `.env` or `.env.local`:
 
-## Learn More
+```bash
+DATABASE_URL=postgresql://...
+APIFY_PERSONAL_API_TOKEN=apify_api_...
+BLOB_READ_WRITE_TOKEN=vercel_blob_rw_...
+```
 
-To learn more about Next.js, take a look at the following resources:
+`DATABASE_URL` should be a Neon pooled connection string. Run `bun run db:migrate`
+after connecting a new database. The SQL source is in
+`db/migrations/001_restaurants.sql`.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+The Blob store must be public because restaurant media is rendered directly on
+public pages. On Vercel, a connected Blob store can use `BLOB_STORE_ID` and the
+platform-provided OIDC token instead of a static read-write token.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Places fallback
 
-## Deploy on Vercel
+Copy `.env.example` to `.env.local` and set a Google Maps Platform key with Places
+API (New) enabled:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+GOOGLE_MAPS_API_KEY=your-key
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The key remains server-side. When Apify is unavailable and this key is configured,
+Limon uses Place Details for phone, hours, rating, reviews, and photos. If that
+request also fails, the importer falls back to the public preview parser.
+
+## POC constraints
+
+- Google Maps' private preview payload is undocumented and can change without
+  notice. All indexing into that payload is isolated in `src/lib/restaurants.ts`.
+- The no-key path usually provides fewer photos and no review text. Place Details
+  provides a limited review set, not every Google review.
+- Generation is idempotent for an identical submitted source URL. Failed jobs can
+  be retried from the generation screen, and stale jobs can be reclaimed after
+  five minutes.
+- Provider JSON is checkpointed before media uploads, so Blob or final database
+  retries do not spend another Apify call. Database leases fence stale workers,
+  and each record has a four-attempt ceiling.
+- Anonymous submissions are limited to eight per requester per hour in Neon. A
+  production launch should add bot verification in front of the public form.
+- The public restaurant route reads Neon only. Provider calls and Blob writes are
+  confined to the generation endpoint.
+- Review, photo, caching, attribution, and derivative-content use is governed by
+  Google Maps Platform terms and should be reviewed before production use.
