@@ -40,3 +40,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# QA / e2e artifacts
+/test-results/
+/playwright-report/
+/qa-artifacts/
+
+# scraped design-research artifacts (local only, referenced from docs/design.md)
+/.firecrawl/
