@@ -3,7 +3,7 @@ import { getRestaurantById, isRestaurantId } from "@/lib/database";
 import { GenerationProgress } from "./generation-progress";
 
 export const metadata = {
-  title: "Building your restaurant | Limon",
+  title: "Armando tu web | Limon",
   robots: { index: false, follow: false },
 };
 

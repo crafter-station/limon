@@ -25,11 +25,10 @@ export async function generateStoredRestaurant(
 ): Promise<RestaurantRecord> {
   const claim = await claimRestaurantGeneration(id, retryFailed);
   if (!claim.record)
-    throw new Error("Restaurant generation record was not found.");
+    throw new Error("No encontramos el registro de esta generación.");
   if (!claim.claimed) return claim.record;
   const leaseToken = claim.leaseToken;
-  if (!leaseToken)
-    throw new Error("Restaurant generation lease was not created.");
+  if (!leaseToken) throw new Error("No pudimos iniciar esta generación.");
 
   try {
     assertBlobStorage();
@@ -61,7 +60,9 @@ export async function generateStoredRestaurant(
         menu = await extractMenuFromImages(restaurant.name, sourceImageUrls);
       } catch (error) {
         menuError =
-          error instanceof Error ? error.message : "Menu extraction failed.";
+          error instanceof Error
+            ? error.message
+            : "No pudimos leer el menú de las fotos.";
       }
     }
     const completed = await completeRestaurantGeneration(
@@ -92,7 +93,7 @@ export async function generateStoredRestaurant(
     return completed;
   } catch (error) {
     const message =
-      error instanceof Error ? error.message : "Restaurant generation failed.";
+      error instanceof Error ? error.message : "No pudimos terminar tu web.";
     const failed = await failRestaurantGeneration(
       claim.record.id,
       leaseToken,

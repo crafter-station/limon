@@ -164,7 +164,7 @@ describe("Google Maps URL validation", () => {
   test("rejects lookalike Google subdomains", () => {
     expect(() =>
       validateGoogleMapsUrl("https://maps.google.evil.com/maps/place/test"),
-    ).toThrow("That does not look like a Google Maps place link.");
+    ).toThrow("Revisa que el link sea de un lugar en Google Maps.");
   });
 
   test("removes tracking parameters while preserving cid lookups", () => {

@@ -67,11 +67,13 @@ function validatedMapsUrl(value: string) {
   try {
     url = new URL(value);
   } catch {
-    throw new Error("Paste a complete Google Maps URL, including https://.");
+    throw new Error(
+      "Pega una URL completa de Google Maps, incluyendo https://.",
+    );
   }
 
   if (url.protocol !== "https:" || !isGoogleMapsUrl(url)) {
-    throw new Error("That does not look like a Google Maps place link.");
+    throw new Error("Revisa que el link sea de un lugar en Google Maps.");
   }
 
   return url;
@@ -101,8 +103,7 @@ function normalizedMapsUrl(url: URL) {
 export async function resolveGoogleMapsUrl(value: string) {
   const initialUrl = validatedMapsUrl(value);
   const { response, url } = await fetchGoogleMapsUrl(initialUrl);
-  if (!response.ok)
-    throw new Error("Google Maps did not return that restaurant.");
+  if (!response.ok) throw new Error("Google Maps no devolvió ese restaurante.");
   await response.body?.cancel();
   return normalizedMapsUrl(url).toString();
 }
@@ -187,7 +188,7 @@ async function fetchMapsDocument(input: string) {
   const { response, url: finalUrl } = await fetchGoogleMapsUrl(initialUrl);
 
   if (!response.ok) {
-    throw new Error("Google Maps did not return that restaurant.");
+    throw new Error("Google Maps no devolvió ese restaurante.");
   }
 
   return { finalUrl, html: await response.text() };
@@ -209,11 +210,12 @@ async function fetchGoogleMapsUrl(initialUrl: URL) {
     }
 
     const location = response.headers.get("location");
-    if (!location) throw new Error("Google Maps returned an invalid redirect.");
+    if (!location)
+      throw new Error("Google Maps devolvió una redirección inválida.");
     url = validatedMapsUrl(new URL(location, url).toString());
   }
 
-  throw new Error("Google Maps redirected too many times.");
+  throw new Error("Google Maps redirigió demasiadas veces.");
 }
 
 async function scrapeGoogleMaps(input: string): Promise<Restaurant> {
@@ -245,7 +247,9 @@ async function scrapeGoogleMaps(input: string): Promise<Restaurant> {
   const { response: previewResponse } = await fetchGoogleMapsUrl(previewUrl);
 
   if (!previewResponse.ok) {
-    throw new Error("Google Maps details are temporarily unavailable.");
+    throw new Error(
+      "Los detalles de Google Maps no están disponibles por ahora.",
+    );
   }
 
   const previewText = await previewResponse.text();
@@ -255,9 +259,7 @@ async function scrapeGoogleMaps(input: string): Promise<Restaurant> {
   const place = asArray(root?.[6]);
 
   if (!place) {
-    throw new Error(
-      "We found the place, but could not read its restaurant details.",
-    );
+    throw new Error("Encontramos el lugar, pero no pudimos leer sus detalles.");
   }
 
   const addressParts = asArray(place[2]);
@@ -525,12 +527,14 @@ async function enrichWithApify(
   );
 
   if (!response.ok) {
-    throw new Error(`Apify restaurant import failed with ${response.status}.`);
+    throw new Error(
+      `La importación con Apify falló (código ${response.status}).`,
+    );
   }
 
   const places = (await response.json()) as ApifyPlace[];
   const place = places[0];
-  if (!place) throw new Error("Apify did not return a restaurant.");
+  if (!place) throw new Error("Apify no encontró información del restaurante.");
 
   return mapApifyRestaurant(place, scraped);
 }

@@ -81,7 +81,7 @@ export async function consumeGenerationAllowance(requesterKey: string) {
     })
     .returning({ requestCount: generationRateLimits.requestCount });
   if (!row || row.requestCount > 8) {
-    throw new Error("Too many generation requests. Try again in an hour.");
+    throw new Error("Demasiadas solicitudes. Intenta de nuevo en una hora.");
   }
 }
 

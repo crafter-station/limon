@@ -15,7 +15,7 @@ const CONTENT_TYPES = new Map([
 export function assertBlobStorage() {
   const hasOidc = process.env.VERCEL_OIDC_TOKEN && process.env.BLOB_STORE_ID;
   if (!process.env.BLOB_READ_WRITE_TOKEN && !hasOidc) {
-    throw new Error("Blob storage is not configured.");
+    throw new Error("El almacenamiento de imágenes no está configurado.");
   }
 }
 
@@ -26,7 +26,7 @@ function validatedMediaUrl(value: string | URL) {
     (!MEDIA_HOST.test(url.hostname) &&
       url.hostname !== "streetviewpixels-pa.googleapis.com")
   ) {
-    throw new Error("Refused an unexpected media host.");
+    throw new Error("Esa imagen viene de un origen no permitido.");
   }
 
   return url;
@@ -45,19 +45,20 @@ async function fetchMedia(source: string) {
     if (response.status < 300 || response.status >= 400) return response;
 
     const location = response.headers.get("location");
-    if (!location) throw new Error("Media returned an invalid redirect.");
+    if (!location)
+      throw new Error("La imagen devolvió una redirección inválida.");
     url = validatedMediaUrl(new URL(location, url));
   }
 
-  throw new Error("Media redirected too many times.");
+  throw new Error("La imagen redirigió demasiadas veces.");
 }
 
 async function readLimitedBody(response: Response) {
   const declaredSize = Number(response.headers.get("content-length"));
   if (Number.isFinite(declaredSize) && declaredSize > MAX_MEDIA_BYTES) {
-    throw new Error("Image is too large.");
+    throw new Error("La imagen es demasiado grande.");
   }
-  if (!response.body) throw new Error("Image response had no body.");
+  if (!response.body) throw new Error("La imagen llegó sin contenido.");
 
   const reader = response.body.getReader();
   const chunks: Uint8Array[] = [];
@@ -69,7 +70,7 @@ async function readLimitedBody(response: Response) {
     total += value.byteLength;
     if (total > MAX_MEDIA_BYTES) {
       await reader.cancel();
-      throw new Error("Image is too large.");
+      throw new Error("La imagen es demasiado grande.");
     }
     chunks.push(value);
   }
@@ -86,11 +87,14 @@ async function readLimitedBody(response: Response) {
 async function copyImage(source: string, pathname: string) {
   const response = await fetchMedia(source);
   if (!response.ok)
-    throw new Error(`Media download failed with ${response.status}.`);
+    throw new Error(
+      `No se pudo descargar la imagen (código ${response.status}).`,
+    );
 
   const contentType = response.headers.get("content-type")?.split(";")[0];
   const extension = contentType ? CONTENT_TYPES.get(contentType) : undefined;
-  if (!contentType || !extension) throw new Error("Unsupported image format.");
+  if (!contentType || !extension)
+    throw new Error("Ese formato de imagen no es compatible.");
 
   const bytes = await readLimitedBody(response);
 
@@ -154,9 +158,7 @@ export async function mirrorRestaurantMedia(
   );
   const preservedPhotos = photos.flatMap((photo) => (photo ? [photo] : []));
   if (restaurant.photos.length > 0 && preservedPhotos.length === 0) {
-    throw new Error(
-      "Restaurant photos could not be preserved in Blob storage.",
-    );
+    throw new Error("No pudimos guardar las fotos del restaurante.");
   }
   const reviews = await mapWithConcurrency(
     restaurant.reviews,
