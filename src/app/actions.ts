@@ -38,7 +38,7 @@ export async function generateRestaurant(formData: FormData) {
     const message =
       error instanceof Error
         ? error.message
-        : "We could not read that Maps link.";
+        : "No pudimos leer ese link de Maps.";
     destination = `/?error=${encodeURIComponent(message)}&maps=${encodeURIComponent(mapsUrl)}`;
   }
 

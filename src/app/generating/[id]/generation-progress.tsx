@@ -12,6 +12,12 @@ type StatusResponse = {
   error?: string;
 };
 
+const STEPS = [
+  "Leyendo el perfil del restaurante",
+  "Guardando fotos y reseñas",
+  "Leyendo el menú y publicando",
+];
+
 function wait(milliseconds: number, signal: AbortSignal) {
   return new Promise<void>((resolve, reject) => {
     const timeout = window.setTimeout(resolve, milliseconds);
@@ -28,7 +34,7 @@ function wait(milliseconds: number, signal: AbortSignal) {
 
 async function readResponse(response: Response): Promise<StatusResponse> {
   const body = (await response.json()) as StatusResponse;
-  if (!response.ok) throw new Error(body.error || "Generation failed.");
+  if (!response.ok) throw new Error(body.error || "No pudimos armar tu web.");
   return body;
 }
 
@@ -99,13 +105,13 @@ export function GenerationProgress({
 
         if (result.status === "failed") {
           setStatus("failed");
-          setError(result.error || "We could not finish this restaurant.");
+          setError(result.error || "No pudimos terminar tu web.");
           return;
         }
 
         setStatus("failed");
         setError(
-          "Generation took too long. Try again to resume from saved data.",
+          "Esto está tardando más de lo normal. Intenta de nuevo para seguir desde donde quedó.",
         );
       } catch (reason) {
         if (controller.signal.aborted) return;
@@ -113,7 +119,7 @@ export function GenerationProgress({
         setError(
           reason instanceof Error
             ? reason.message
-            : "The generation service is unavailable.",
+            : "El servicio no está disponible por ahora.",
         );
       }
     }
@@ -122,86 +128,106 @@ export function GenerationProgress({
     return () => controller.abort();
   }, [attempt, id, initialStatus, router]);
 
+  const failed = status === "failed";
+
   return (
-    <main className="generation-page relative grid min-h-screen overflow-hidden bg-[#17231a] px-5 py-12 text-white sm:px-8">
-      <div className="generation-glow absolute left-1/2 top-1/2 size-[38rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#d7ef58]/10 blur-3xl" />
-      <div className="relative z-10 m-auto w-full max-w-2xl text-center">
-        <a className="inline-flex items-center gap-2.5" href="/">
-          <span className="relative grid size-9 place-items-center rounded-full bg-[#d7ef58] text-[#17231a]">
-            <span className="font-display text-xl leading-none">L</span>
+    <main className="limon-landing limon-mm relative grid min-h-screen place-items-center overflow-hidden bg-[var(--mm-cream)] px-5 py-16 text-[var(--mm-ink)] sm:px-8">
+      <div
+        aria-hidden="true"
+        className="generation-glow pointer-events-none absolute left-1/2 top-1/2 size-[38rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--mm-green-deep)]/20 blur-3xl"
+      />
+
+      <div className="relative z-10 w-full max-w-2xl text-center">
+        <a
+          className="limon-tap inline-flex cursor-pointer items-center gap-2.5 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--mm-ink)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--mm-cream)]"
+          href="/"
+          translate="no"
+        >
+          <span className="grid size-9 place-items-center rounded-full bg-[var(--mm-green-deep)] font-caprasimo text-lg leading-none text-[var(--mm-ink)]">
+            L
           </span>
-          <span className="text-xl font-bold tracking-[-0.04em]">limon</span>
+          <span className="font-caprasimo text-xl leading-none text-[var(--mm-ink)]">
+            limon
+          </span>
         </a>
 
         <div
-          className="relative mx-auto mt-16 size-40 sm:size-48"
           aria-hidden="true"
+          className="relative mx-auto mt-14 size-36 sm:size-40"
         >
-          <span className="generation-ring absolute inset-0 rounded-full border border-white/15" />
-          <span className="generation-orbit absolute inset-3 rounded-full border-2 border-transparent border-t-[#d7ef58]" />
-          <span className="font-display absolute inset-0 grid place-items-center text-6xl text-[#d7ef58] sm:text-7xl">
+          <span className="generation-ring absolute inset-0 rounded-full border border-[var(--mm-ink)]/12" />
+          {!failed ? (
+            <span className="generation-orbit absolute inset-3 rounded-full border-2 border-transparent border-t-[var(--mm-green-deep)] motion-reduce:hidden" />
+          ) : null}
+          <span className="font-caprasimo absolute inset-0 grid place-items-center text-5xl text-[var(--mm-ink)] sm:text-6xl">
             L
           </span>
         </div>
 
-        {status === "failed" ? (
-          <>
-            <p className="mt-12 font-mono text-xs font-bold uppercase tracking-[0.22em] text-[#ff7448]">
-              Generation paused
-            </p>
-            <h1 className="font-display mt-5 text-5xl leading-none sm:text-7xl">
-              The kitchen needs another try.
-            </h1>
-            <p
-              className="mx-auto mt-6 max-w-xl leading-7 text-white/60"
-              role="alert"
-            >
-              {error}
-            </p>
-            <div className="mt-9 flex flex-wrap justify-center gap-3">
-              <button
-                className="rounded-full bg-[#d7ef58] px-6 py-3.5 font-bold text-[#17231a]"
-                onClick={() => setAttempt((value) => value + 1)}
-                type="button"
+        <div aria-live="polite">
+          {failed ? (
+            <>
+              <p className="mt-10 text-sm font-bold uppercase tracking-[0.14em] text-[var(--danger)]">
+                Necesitamos otro intento
+              </p>
+              <h1 className="limon-enter mt-4 font-caprasimo text-[clamp(2.25rem,5.5vw,3.5rem)] leading-[1.02] tracking-tight text-balance">
+                La cocina necesita un momento más.
+              </h1>
+              <p
+                className="limon-enter mx-auto mt-5 max-w-lg text-lg leading-7 text-[var(--mm-ink)]/70 text-pretty"
+                role="alert"
+                style={{ "--limon-delay": "60ms" } as React.CSSProperties}
               >
-                Try again
-              </button>
-              <a
-                className="rounded-full border border-white/25 px-6 py-3.5 font-bold"
-                href="/"
+                {error}
+              </p>
+              <div className="limon-enter mt-8 flex flex-wrap items-center justify-center gap-3">
+                <button
+                  className="limon-btn limon-press limon-tap inline-flex min-h-13 cursor-pointer items-center rounded-full bg-[var(--mm-maps-red)] px-7 text-base font-bold text-white transition-[transform,background-color] duration-150 ease-out hover:bg-[#d33a2d] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--mm-ink)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--mm-cream)]"
+                  onClick={() => setAttempt((value) => value + 1)}
+                  type="button"
+                >
+                  Intentar de nuevo
+                </button>
+                <a
+                  className="limon-btn limon-press limon-tap inline-flex min-h-13 cursor-pointer items-center rounded-full bg-[var(--mm-white)] px-7 text-base font-bold text-[var(--mm-ink)] shadow-[0_8px_30px_rgba(44,46,42,0.10)] transition-[transform,background-color] duration-150 ease-out hover:bg-[#f7f4ea] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--mm-ink)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--mm-cream)]"
+                  href="/"
+                >
+                  Usar otro link
+                </a>
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="mt-10 text-sm font-bold uppercase tracking-[0.14em] text-[#5fa83a]">
+                Preparando tu web
+              </p>
+              <h1 className="font-caprasimo mt-4 text-[clamp(2.25rem,5.5vw,3.5rem)] leading-[1.02] tracking-tight text-balance">
+                Armando tu web.
+              </h1>
+              <p className="mx-auto mt-5 max-w-md text-lg leading-7 text-[var(--mm-ink)]/70 text-pretty">
+                Estamos juntando fotos, menú, horarios y contacto en una web
+                lista para compartir.
+              </p>
+              <ol
+                aria-hidden="true"
+                className="mx-auto mt-9 grid max-w-md gap-2 text-left text-sm"
               >
-                Use another link
-              </a>
-            </div>
-          </>
-        ) : (
-          <>
-            <p className="mt-12 font-mono text-xs font-bold uppercase tracking-[0.22em] text-[#d7ef58]">
-              Building your restaurant
-            </p>
-            <h1 className="font-display mt-5 text-5xl leading-none sm:text-7xl">
-              Setting the table.
-            </h1>
-            <p className="mx-auto mt-6 max-w-lg leading-7 text-white/60">
-              We are gathering the details once, preserving the photos, and
-              preparing a page that loads from your own database from now on.
-            </p>
-            <div className="mx-auto mt-10 grid max-w-md gap-2 text-left text-sm">
-              <p className="generation-step rounded-full border border-white/10 bg-white/[0.04] px-5 py-3 text-white/70">
-                Reading the restaurant profile
+                {STEPS.map((step, index) => (
+                  <li
+                    className={`generation-step rounded-full border border-[var(--mm-ink)]/10 bg-[var(--mm-white)]/70 px-5 py-3 text-[var(--mm-ink)]/70 generation-step-delay-${index}`}
+                    key={step}
+                  >
+                    {step}
+                  </li>
+                ))}
+              </ol>
+              <p className="mt-8 text-sm text-[var(--mm-ink)]/50">
+                No cierres esta pestaña. La mayoría está lista en menos de un
+                minuto.
               </p>
-              <p className="generation-step generation-step-delay-1 rounded-full border border-white/10 bg-white/[0.04] px-5 py-3 text-white/70">
-                Preserving photos and reviews
-              </p>
-              <p className="generation-step generation-step-delay-2 rounded-full border border-white/10 bg-white/[0.04] px-5 py-3 text-white/70">
-                Reading menu photos and publishing
-              </p>
-            </div>
-            <p className="mt-8 text-xs text-white/35" aria-live="polite">
-              Keep this tab open. Most restaurants are ready in under a minute.
-            </p>
-          </>
-        )}
+            </>
+          )}
+        </div>
       </div>
     </main>
   );
