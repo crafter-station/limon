@@ -1,15 +1,47 @@
 @import "tailwindcss";
 
 :root {
+  /* Legacy tokens kept for /[slug] + /generating pages */
   --background: #f2efe4;
   --foreground: #1d2a20;
+
+  /* Legacy limon landing tokens */
+  --bg: #f7ffb0;
+  --surface: #fff8d6;
+  --lemon: #d4f000;
+  --zest: #ff5a1f;
+  --leaf: #14261c;
+  --muted: #3d5346;
+  --white: #ffffff;
+  --danger: #b63b20;
+
+  /* MindMarket-inspired landing palette (see .firecrawl/mindmarket-DESIGN.md) */
+  --mm-green: #b8e88c;
+  --mm-green-deep: #8ed462;
+  --mm-warm: #e0dbce;
+  --mm-cream: #f5f1e4;
+  --mm-ink: #2c2e2a;
+  --mm-maps-red: #ea4335;
+  --mm-white: #ffffff;
+  --mm-yellow: #f0c93a;
+
+  /* Motion — strong custom curves (Emil) */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-lemon: var(--lemon);
+  --color-zest: var(--zest);
+  --color-leaf: var(--leaf);
+  --color-muted: var(--muted);
+  --color-danger: var(--danger);
+  --font-sans: var(--font-karla);
+  --font-display: var(--font-caprasimo);
 }
 
 * {
@@ -22,11 +54,17 @@ html {
 
 body {
   margin: 0;
+  /* Clip horizontal bleed here, not on inner wrappers — overflow-x on a
+   * descendant forces its overflow-y to `auto`, which turns it into a
+   * scroll-container reference and silently breaks `position: sticky`
+   * for children (e.g. the scroll-jacked steps section). */
+  overflow-x: hidden;
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  font-family: var(--font-karla), system-ui, Arial, sans-serif;
 }
 
+/* Display serif kept for the generated restaurant sites (/[slug]) */
 .font-display {
   font-family: Georgia, "Times New Roman", serif;
   font-weight: 500;
@@ -36,36 +74,88 @@ body {
   font-family: Roboto, Arial, sans-serif;
 }
 
-.home-shell {
-  background-image:
-    radial-gradient(
-      circle at 18% 18%,
-      rgba(215, 239, 88, 0.17),
-      transparent 25%
-    ),
-    radial-gradient(
-      circle at 88% 70%,
-      rgba(255, 116, 72, 0.12),
-      transparent 24%
-    );
+/* Caprasimo — Limon landing display face (no italics) */
+.font-caprasimo {
+  font-family: var(--font-caprasimo), Georgia, serif;
+  font-weight: 400;
+  font-style: normal;
 }
 
-.restaurant-placeholder {
-  background-color: #263d2c;
-  background-image:
-    radial-gradient(
-      circle at 22% 24%,
-      rgba(215, 239, 88, 0.35),
-      transparent 12%
-    ),
-    radial-gradient(circle at 71% 64%, rgba(255, 116, 72, 0.5), transparent 18%),
-    linear-gradient(125deg, #17291d 0%, #42613b 45%, #19291e 100%);
+/* ---------- Limon landing ---------- */
+
+.limon-landing {
+  background: var(--bg);
+  color: var(--leaf);
+  font-family: var(--font-karla), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
+
+/* Cream page; hero paints its own solid green field (no map bg) */
+.limon-landing.limon-mm {
+  background: var(--mm-warm);
+  color: var(--mm-ink);
+}
+
+.limon-landing.limon-mm::before {
+  content: none;
+}
+
+.limon-tap {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.limon-btn,
+button:not(:disabled),
+a[href] {
+  cursor: pointer;
+}
+
+/* Soft surface — no hard neubrutalist offset shadows */
+.limon-surface {
+  box-shadow:
+    0 1px 2px rgba(20, 38, 28, 0.04),
+    0 10px 28px rgba(20, 38, 28, 0.07);
+}
+
+/* Tactile press — specific properties only, custom ease-out */
+.limon-press {
+  transition: transform 140ms var(--ease-out);
+}
+.limon-press:active {
+  transform: scale(0.97);
+}
+
+/* Quiet entrance — once, short */
+.limon-enter {
+  animation: limon-rise 480ms var(--ease-out) both;
+  animation-delay: var(--limon-delay, 0ms);
+}
+
+@keyframes limon-rise {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 10px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .limon-enter {
+    animation: none;
+  }
+}
+
+/* ---------- /generating (tool surface — same system as the landing) ---------- */
 
 .generation-ring {
   box-shadow:
-    0 0 0 18px rgba(255, 255, 255, 0.025),
-    0 0 0 36px rgba(255, 255, 255, 0.015);
+    0 0 0 18px rgba(44, 46, 42, 0.025),
+    0 0 0 36px rgba(44, 46, 42, 0.015);
 }
 
 .generation-orbit {
@@ -105,16 +195,44 @@ body {
   0%,
   28%,
   100% {
-    border-color: rgba(255, 255, 255, 0.1);
-    color: rgba(255, 255, 255, 0.7);
+    border-color: rgba(44, 46, 42, 0.1);
+    color: rgba(44, 46, 42, 0.7);
     transform: translateX(0);
   }
 
   12% {
-    border-color: rgba(215, 239, 88, 0.55);
-    color: #d7ef58;
+    border-color: rgba(94, 168, 58, 0.45);
+    color: #4d8a2f;
     transform: translateX(0.35rem);
   }
+}
+
+/* ---------- /[slug] generated restaurant pages (unchanged) ---------- */
+
+.home-shell {
+  background-image:
+    radial-gradient(
+      circle at 18% 18%,
+      rgba(215, 239, 88, 0.17),
+      transparent 25%
+    ),
+    radial-gradient(
+      circle at 88% 70%,
+      rgba(255, 116, 72, 0.12),
+      transparent 24%
+    );
+}
+
+.restaurant-placeholder {
+  background-color: #263d2c;
+  background-image:
+    radial-gradient(
+      circle at 22% 24%,
+      rgba(215, 239, 88, 0.35),
+      transparent 12%
+    ),
+    radial-gradient(circle at 71% 64%, rgba(255, 116, 72, 0.5), transparent 18%),
+    linear-gradient(125deg, #17291d 0%, #42613b 45%, #19291e 100%);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -129,9 +247,24 @@ body {
     transition-duration: 0.01ms;
   }
 
+  /* Keep opacity to aid comprehension; drop movement */
+  .limon-enter {
+    animation: limon-fade 300ms ease both;
+    animation-delay: 0ms;
+  }
+
   .generation-glow,
   .generation-orbit,
   .generation-step {
     animation: none;
+  }
+}
+
+@keyframes limon-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
   }
 }
